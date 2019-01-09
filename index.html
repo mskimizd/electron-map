@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html data-ng-app="map">
+  <head>
+    <meta charset="UTF-8">
+    <title>Electron Map</title>
+    <link rel="stylesheet" href="js/leaflet.1.2.0/leaflet.css"/> 
+    <link rel="stylesheet" href="css/animate.min.css"/> 
+    <style>
+      body{
+        margin:0;
+        padding:0;
+      }
+
+      #mapid { height: 100%; }
+      
+      #ipinput{
+        position: absolute;
+        right: 12px;
+        z-index: 999;
+        top: 12px;
+        border: 2px solid #c7c7c7;
+        border-radius: 2px;
+        height: 32px;
+        width: 256px;
+        line-height: 32px;
+        font-size: 16px;
+        color: #333;
+        padding: 0 6px;
+      }
+
+      #info{
+        position: fixed;
+        bottom: 24px;
+        width: 100%;
+        z-index: 999;
+        text-align: center;        
+      }   
+
+      #info #infoText{
+        background: #da665d;
+        padding: 8px 32px;
+        font-size: 24px;
+        color: #fff;
+        border-radius: 2px;
+        box-shadow: 0px 4px 4px #999;
+      }       
+
+    </style>
+  </head>
+  <body>
+    <div data-ng-controller="baseCtrl" style="width:100vw;height:100vh;">
+      <input id="ipinput" ng-model="inputStr" type="text" placeholder="输入IP或经纬度（纬度,经度）" ng-keypress="pin2map($event)"></input>
+      <div id="mapid"></div>
+      <div id="info" class="animated fadeInUp" ng-show="showMsg">
+        <span id="infoText" ng-class="msgType">
+          {{ infoMessage }}
+        </span>
+      </div>
+    </div>
+    
+
+    <script>
+        window.nodeRequire = require;
+        delete window.require;
+        delete window.exports;
+        delete window.module;
+    </script>
+    <script src="js/angular.js" ></script>
+    <script src="js/leaflet.1.2.0/leaflet-src.js"></script>
+    <script src="js/jquery-3.1.0.min.js" ></script>
+
+    <script>
+      // You can also require other files to run in this process
+      // window.$ = window.jQuery = require(".js/jquery.js")
+
+      nodeRequire('./renderer.js')
+
+
+
+      var Map = angular.module('map', []);
+      Map.controller('baseCtrl', ['$scope','$timeout', function($scope, $timeout) {
+
+        $scope.inputStr = "";
+        $scope.showMsg = false;
+        $scope.msgType = "normal";
+        $scope.infoMessage = "";
+
+        var mymap = L.map('mapid').setView([34.26, 108.94], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mymap);
+
+        $scope.pin2map = function($event){
+          $scope.showMsg = false;
+          if($event.keyCode == 13){
+            if($scope.inputStr!=""){
+              $.ajax({
+                method:"post",
+                url:"http://localhost:3000/getGeo",
+                data:{inputStr:$scope.inputStr}
+              }).done((res)=>{
+                if(res.code == 200){
+                  if(res.data !="" && typeof res.data != 'undefined' && res.data !=null ){
+                    var marker = L.marker(res.data).addTo(mymap).bindPopup($scope.inputStr+"<hr>"+res.data);
+                    mymap.panTo(res.data);                    
+                  }else{
+                    $scope.$apply(function() {  
+                      $scope.showMsg = true;
+                      $scope.msgType = "error";
+                      $scope.infoMessage = "格式错误，请重试！";   
+                    });                    
+                  }
+                }else if(res.code == 301){
+                  $scope.$apply(function() {
+                    $scope.showMsg = true;
+                    $scope.msgType = "error";
+                    $scope.infoMessage = "查询不到该IP信息";   
+                  });                                      
+                }else if(res.code == 300){
+                  $scope.$apply(function() {  
+                    $scope.showMsg = true;
+                    $scope.msgType = "error";
+                    $scope.infoMessage = "系统错误，请刷新页面";   
+                  });                                      
+                }
+
+              })
+
+            }else{
+              $scope.$apply(function() { 
+                $scope.showMsg = true;
+                $scope.msgType = "error";
+                $scope.infoMessage = "请输入一个经纬度或IP地址";
+              });              
+            }
+          }
+        }
+
+      }]);
+
+    
+    </script>   
+  </body>
+</html>

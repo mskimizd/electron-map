@@ -1,0 +1,22 @@
+{
+  "name": "electron-map",
+  "version": "1.0.0",
+  "description": "An Electron map application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/electron/electron-map",
+  "keywords": [
+    "Electron",
+    "map"
+  ],
+  "author": "zz",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "~1.7.8"
+  },
+  "dependencies": {
+    "geoip-lite": "^1.3.5"
+  }
+}
